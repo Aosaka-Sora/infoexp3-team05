@@ -27,6 +27,7 @@ async function loadMessages() {
             </article>
         `;
     }).join('');
+    changeMessageColor(nameInput.value);
 }
 
 function escapeHtml(s) {
@@ -53,5 +54,19 @@ document.querySelector('#form').addEventListener('submit', async e => {
         await loadMessages();
     }
 });
-
+function changeMessageColor(x){
+    const articlesArray = Array.from(document.querySelectorAll('article'));
+    const currentText = x;
+    for(let i=0;i<articlesArray.length;i++){
+        articlesArray[i].className = "";
+        if(articlesArray[i].querySelector('b').textContent == currentText)articlesArray[i].classList.add("pickupMessage");
+        else articlesArray[i].classList.add("message");
+    }
+}
+const nameInput = document.getElementById('name');
+if (nameInput) {
+    nameInput.addEventListener('input', (e) => {
+        changeMessageColor(e.target.value);
+    });
+}
 loadMessages();
