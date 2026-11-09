@@ -23,7 +23,7 @@ async function loadMessages() {
                     <span class="post-time" style="font-size: 0.85rem; color: #666; margin-left: 8px;">${formattedDate}</span>
                 </div>
                 <p>${escapeHtml(x.message)}</p>
-                <div class="meta">#${x.id}</div>
+                <div class="meta">#${x.id}/${x.message.length}文字</div>
             </article>
         `;
     }).join('');
