@@ -42,7 +42,9 @@ def create_message():
     with connect() as con:
         cur = con.execute("INSERT INTO messages(name,message,created_at) VALUES(?,?,?)", (name,message,created_at))
         row = con.execute("SELECT * FROM messages WHERE id=?", (cur.lastrowid,)).fetchone()
-    return jsonify(dict(row)), 201
+    response_data=dict(row)
+    response_data["char_count"]=len(message)
+    return jsonify(response_data), 201
 
 @app.put("/api/messages/<int:message_id>")
 def update_message(message_id):
@@ -54,7 +56,7 @@ def update_message(message_id):
         cur = con.execute("UPDATE messages SET message=? WHERE id=?", (message,message_id))
         if cur.rowcount == 0:
             return jsonify({"error": "not found"}), 404
-    return jsonify({"ok": True})
+    return jsonify({"ok": True,"char_count":len(message)})
 
 @app.delete("/api/messages/<int:message_id>")
 def delete_message(message_id):
