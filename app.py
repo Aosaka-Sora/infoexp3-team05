@@ -29,6 +29,11 @@ def index():
 def get_messages():
     with connect() as con:
         rows = con.execute("SELECT * FROM messages ORDER BY id DESC").fetchall()
+    messages = [] 
+    for r in rows:
+        data = dict(r)
+        data["char_count"] = len(data["message"])
+        messages.append(data)
     return jsonify([dict(r) for r in rows])
 
 @app.post("/api/messages")
