@@ -12,13 +12,24 @@
         <main>
             <section id="home-screen" class="button-group">
                 <button id="start-quiz" type="button">問題を解く</button>
-                <button type="button">新しい単語を登録する</button>
+                <button id="show-word-form" type="button">新しい単語を登録する</button>
             </section>
 
             <section id="quiz-screen" class="quiz-screen" hidden>
                 <p id="english-word" class="english-word"></p>
                 <div id="answer-buttons" class="answer-buttons"></div>
                 <p id="quiz-status" role="status"></p>
+            </section>
+
+            <section id="word-form-screen" class="word-form-screen" hidden>
+                <form id="word-form">
+                    <label for="english-input">英単語</label>
+                    <input id="english-input" name="english" required>
+                    <label for="japanese-input">日本語</label>
+                    <input id="japanese-input" name="japanese" required>
+                    <button type="submit">登録する</button>
+                </form>
+                <p id="word-status" role="status"></p>
             </section>
         </main>
         <script src="/static/app.js"></script>
