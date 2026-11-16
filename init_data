@@ -1,0 +1,44 @@
+
+from database import init_db, add_word
+
+init_db()
+
+words = [
+    ("apple", "リンゴ"),
+    ("book", "本"),
+    ("school", "学校"),
+    ("beautiful", "美しい"),
+    ("difficult", "難しい"),
+    ("friend", "友達"),
+    ("weather", "天気"),
+    ("important", "重要な"),
+    ("travel", "旅行する"),
+    ("language", "言語"),
+
+    ("improve", "改善する"),
+    ("opportunity", "機会"),
+    ("environment", "環境"),
+    ("necessary", "必要な"),
+    ("experience", "経験"),
+    ("consider", "よく考える"),
+    ("recognize", "認識する"),
+    ("suggest", "提案する"),
+    ("behavior", "行動"),
+    ("achieve", "達成する"),
+
+    ("substantial", "かなりの"),
+    ("ambiguous", "曖昧な"),
+    ("inevitable", "避けられない"),
+    ("sophisticated", "洗練された"),
+    ("profound", "深遠な"),
+    ("meticulous", "細心の注意を払う"),
+    ("paradigm", "模範"),
+    ("ubiquitous", "至る所に存在する"),
+    ("deteriorate", "悪化する"),
+    ("resilient", "回復力のある")
+]
+
+for english, japanese in words:
+    add_word(english, japanese)
+
+print("30単語の登録が完了しました")
