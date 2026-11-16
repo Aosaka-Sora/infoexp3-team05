@@ -1,76 +1,128 @@
-from flask import Flask, jsonify, render_template, request
-from pathlib import Path
+import random
 import sqlite3
-from datetime import datetime, timezone
+from pathlib import Path
+
+from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
-DB = Path("data/englishquiz.db")
+WORD_DB = Path("data/words.db")
 
-def connect():
-    DB.parent.mkdir(exist_ok=True)
-    con = sqlite3.connect(DB)
-    con.row_factory = sqlite3.Row
-    return con
 
-def init_db():
-    with connect() as con:
-        con.execute("""CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            message TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )""")
+def read_words():
+    if not WORD_DB.exists():
+        raise FileNotFoundError
+
+    with sqlite3.connect(WORD_DB) as con:
+        rows = con.execute(
+            "SELECT english, japanese FROM words "
+            "WHERE english IS NOT NULL AND japanese IS NOT NULL "
+            "ORDER BY rowid"
+        ).fetchall()
+
+    return [
+        (str(english).strip(), str(japanese).strip())
+        for english, japanese in rows
+        if str(english).strip() and str(japanese).strip()
+    ]
+
 
 @app.get("/")
 def index():
     return render_template("index.html")
 
-@app.get("/api/messages")
-def get_messages():
-    with connect() as con:
-        rows = con.execute("SELECT * FROM messages ORDER BY id DESC").fetchall()
-    messages = [] 
-    for r in rows:
-        data = dict(r)
-        data["char_count"] = len(data["message"])
-        messages.append(data)
-    return jsonify([dict(r) for r in rows])
 
-@app.post("/api/messages")
-def create_message():
+@app.get("/api/quiz")
+def get_quiz():
+    try:
+        words = read_words()
+    except FileNotFoundError:
+        return jsonify({"error": "word database not found"}), 500
+    except sqlite3.Error:
+        return jsonify({"error": "word database could not be read"}), 500
+
+    translations = list({japanese for _, japanese in words})
+    if len(translations) < 4 or not words:
+        return jsonify({"error": "at least four word translations are required"}), 500
+
+    english, answer = random.choice(words)
+    choices = random.sample(
+        [japanese for japanese in translations if japanese != answer],
+        3,
+    )
+    choices.append(answer)
+    random.shuffle(choices)
+    return jsonify({"english": english, "choices": choices})
+
+
+@app.post("/api/ans_quiz")
+def ans_quiz():
     data = request.get_json(silent=True) or {}
-    name = str(data.get("name", "")).strip()[:30]
-    message = str(data.get("message", "")).strip()[:300]
-    if not name or not message:
-        return jsonify({"error": "name and message are required"}), 400
-    created_at = datetime.now(timezone.utc).isoformat()
-    with connect() as con:
-        cur = con.execute("INSERT INTO messages(name,message,created_at) VALUES(?,?,?)", (name,message,created_at))
-        row = con.execute("SELECT * FROM messages WHERE id=?", (cur.lastrowid,)).fetchone()
-    response_data=dict(row)
-    response_data["char_count"]=len(message)
-    return jsonify(response_data), 201
+    english = str(data.get("english", "")).strip()
+    japanese = str(data.get("japanese", "")).strip()
+    if not english or not japanese:
+        return jsonify({"error": "english and japanese are required"}), 400
+    if not WORD_DB.exists():
+        return jsonify({"error": "word database not found"}), 500
 
-@app.put("/api/messages/<int:message_id>")
-def update_message(message_id):
+    try:
+        with sqlite3.connect(WORD_DB) as con:
+            row = con.execute(
+                "SELECT 1 FROM words WHERE english = ? AND japanese = ? LIMIT 1",
+                (english, japanese),
+            ).fetchone()
+    except FileNotFoundError:
+        return jsonify({"error": "word database not found"}), 500
+    except sqlite3.Error:
+        return jsonify({"error": "word database could not be read"}), 500
+
+    return jsonify({"correct": row is not None})
+
+
+@app.get("/api/words")
+def get_words():
+    try:
+        words = read_words()
+    except FileNotFoundError:
+        return jsonify({"error": "word database not found"}), 500
+    except sqlite3.Error:
+        return jsonify({"error": "word database could not be read"}), 500
+
+    return jsonify([
+        {"english": english, "japanese": japanese}
+        for english, japanese in words
+    ])
+
+
+@app.post("/api/words")
+def add_word():
     data = request.get_json(silent=True) or {}
-    message = str(data.get("message", "")).strip()[:300]
-    if not message:
-        return jsonify({"error": "message is required"}), 400
-    with connect() as con:
-        cur = con.execute("UPDATE messages SET message=? WHERE id=?", (message,message_id))
-        if cur.rowcount == 0:
-            return jsonify({"error": "not found"}), 404
-    return jsonify({"ok": True,"char_count":len(message)})
+    english = str(data.get("english", "")).strip()
+    japanese = str(data.get("japanese", "")).strip()
+    if not english or not japanese:
+        return jsonify({"error": "english and japanese are required"}), 400
 
-@app.delete("/api/messages/<int:message_id>")
-def delete_message(message_id):
-    with connect() as con:
-        cur = con.execute("DELETE FROM messages WHERE id=?", (message_id,))
-        if cur.rowcount == 0:
-            return jsonify({"error": "not found"}), 404
-    return "", 204
+    WORD_DB.parent.mkdir(exist_ok=True)
+    try:
+        with sqlite3.connect(WORD_DB) as con:
+            con.execute(
+                "CREATE TABLE IF NOT EXISTS words ("
+                "english TEXT NOT NULL, japanese TEXT NOT NULL)"
+            )
+            duplicate = con.execute(
+                "SELECT 1 FROM words WHERE english = ? AND japanese = ? LIMIT 1",
+                (english, japanese),
+            ).fetchone()
+            if duplicate is not None:
+                return jsonify({"error": "word already exists"}), 409
+            con.execute(
+                "INSERT INTO words (english, japanese) VALUES (?, ?)",
+                (english, japanese),
+            )
+    except sqlite3.Error:
+        return jsonify({"error": "word database could not be updated"}), 500
+
+    return jsonify({"english": english, "japanese": japanese}), 201
+
 
 if __name__ == "__main__":
-    init_db()
     app.run(host="0.0.0.0", port=5000, debug=False)
