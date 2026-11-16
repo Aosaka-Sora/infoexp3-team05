@@ -5,7 +5,7 @@ from pathlib import Path
 from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
-WORD_DB = Path("data/word.db")
+WORD_DB = Path("data/words.db")
 
 
 def read_words():
