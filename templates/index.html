@@ -9,9 +9,18 @@
     <body>
         <h1 class="app-title">English Quiz</h1>
 
-        <main class="button-group">
-            <button type="button">問題を解く</button>
-            <button type="button">新しい単語を登録する</button>
+        <main>
+            <section id="home-screen" class="button-group">
+                <button id="start-quiz" type="button">問題を解く</button>
+                <button type="button">新しい単語を登録する</button>
+            </section>
+
+            <section id="quiz-screen" class="quiz-screen" hidden>
+                <p id="english-word" class="english-word"></p>
+                <div id="answer-buttons" class="answer-buttons"></div>
+                <p id="quiz-status" role="status"></p>
+            </section>
         </main>
+        <script src="/static/app.js"></script>
     </body>
 </html>

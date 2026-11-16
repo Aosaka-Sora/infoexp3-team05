@@ -26,6 +26,26 @@ body {
     padding: 20px;
 }
 
+.quiz-screen {
+    width: min(100% - 48px, 480px);
+    text-align: center;
+}
+
+.english-word {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.answer-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.answer-buttons button {
+    width: 100%;
+}
+
 button {
     font: inherit;
     padding: 14px 24px;

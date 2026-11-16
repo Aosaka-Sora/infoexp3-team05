@@ -1,72 +1,67 @@
-async function loadMessages() {
-    const r = await fetch('/api/messages');
-    const xs = await r.json();
-    
-    document.querySelector('#messages').innerHTML = xs.map(x => {
-        // created_at を見やすい日時（例: 2026/03/30 21:30）にフォーマット
-        let formattedDate = '';
-        if (x.created_at) {
-            const date = new Date(x.created_at);
-            formattedDate = new Intl.DateTimeFormat('ja-JP', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            }).format(date);
+const quizScreen = document.querySelector('#quiz-screen');
+const startQuizButton = document.querySelector('#start-quiz');
+const englishWord = document.querySelector('#english-word');
+const answerButtons = document.querySelector('#answer-buttons');
+const quizStatus = document.querySelector('#quiz-status');
+
+let currentEnglish = '';
+
+async function startQuiz() {
+    quizStatus.textContent = '';
+    startQuizButton.disabled = true;
+
+    try {
+        const response = await fetch('/api/quiz');
+        const quiz = await response.json();
+        if (!response.ok) {
+            throw new Error(quiz.error || '問題を取得できませんでした');
         }
 
-        return `
-            <article class="message">
-                <div class="message-header">
-                    <b>${escapeHtml(x.name)}</b>
-                    <span class="post-time" style="font-size: 0.85rem; color: #666; margin-left: 8px;">${formattedDate}</span>
-                </div>
-                <p>${escapeHtml(x.message)}</p>
-                <div class="meta">#${x.id}/${x.message.length}文字</div>
-            </article>
-        `;
-    }).join('');
-    changeMessageColor(nameInput.value);
-}
-
-function escapeHtml(s) {
-    const d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
-}
-
-document.querySelector('#form').addEventListener('submit', async e => {
-    e.preventDefault();
-    const name = document.querySelector('#name').value;
-    const message = document.querySelector('#message').value;
-    
-    const r = await fetch('/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, message })
-    });
-    
-    document.querySelector('#status').textContent = r.ok ? '投稿しました' : '投稿に失敗しました';
-    
-    if (r.ok) {
-        document.querySelector('#message').value = '';
-        await loadMessages();
-    }
-});
-function changeMessageColor(x){
-    const articlesArray = Array.from(document.querySelectorAll('article'));
-    const currentText = x;
-    for(let i=0;i<articlesArray.length;i++){
-        articlesArray[i].className = "";
-        if(articlesArray[i].querySelector('b').textContent == currentText)articlesArray[i].classList.add("pickupMessage");
-        else articlesArray[i].classList.add("message");
+        currentEnglish = quiz.english;
+        englishWord.textContent = currentEnglish;
+        answerButtons.replaceChildren(
+            ...quiz.choices.map(choice => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = choice;
+                button.addEventListener('click', () => answerQuiz(choice));
+                return button;
+            }),
+        );
+        quizScreen.hidden = false;
+        startQuizButton.disabled = false;
+    } catch (error) {
+        quizStatus.textContent = error.message;
+        startQuizButton.disabled = false;
     }
 }
-const nameInput = document.getElementById('name');
-if (nameInput) {
-    nameInput.addEventListener('input', (e) => {
-        changeMessageColor(e.target.value);
+
+async function answerQuiz(japanese) {
+    const buttons = answerButtons.querySelectorAll('button');
+    buttons.forEach(button => {
+        button.disabled = true;
     });
+
+    try {
+        const response = await fetch('/api/ans_quiz', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                english: currentEnglish,
+                japanese,
+            }),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || '回答を送信できませんでした');
+        }
+        quizStatus.textContent = result.correct ? '正解です' : '不正解です';
+    } catch (error) {
+        quizStatus.textContent = error.message;
+        buttons.forEach(button => {
+            button.disabled = false;
+        });
+    }
 }
-loadMessages();
+
+startQuizButton.addEventListener('click', startQuiz);
