@@ -1,5 +1,5 @@
 {
-  "name": "InfoExp3 MiniBoard",
+  "name": "InfoExp3 EnglishQuiz",
 
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
 
@@ -16,7 +16,7 @@
 
   "portsAttributes": {
     "5000": {
-      "label": "MiniBoard",
+      "label": "EnglishQuiz",
       "onAutoForward": "notify"
     }
   },

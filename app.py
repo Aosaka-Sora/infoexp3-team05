@@ -4,7 +4,7 @@ import sqlite3
 from datetime import datetime, timezone
 
 app = Flask(__name__)
-DB = Path("data/miniboard.db")
+DB = Path("data/englishquiz.db")
 
 def connect():
     DB.parent.mkdir(exist_ok=True)
