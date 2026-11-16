@@ -46,6 +46,21 @@ body {
     width: 100%;
 }
 
+.word-form-screen {
+    width: min(100% - 48px, 480px);
+    margin-top: 20px;
+}
+
+#word-form {
+    display: grid;
+    gap: 8px;
+}
+
+#word-form input {
+    font: inherit;
+    padding: 10px;
+}
+
 button {
     font: inherit;
     padding: 14px 24px;
